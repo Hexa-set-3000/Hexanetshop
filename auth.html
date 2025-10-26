@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>HexaShop — вход</title>
+<style>
+:root{--bg:#0b0f14;--panel:#11161f;--text:#e7e9ee;--muted:#9aa3b2;--stroke:rgba(255,255,255,.12);--ring:#3b82f6;--radius:16px}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif}
+header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--stroke)}
+.brand{font-weight:900}.actions{display:flex;gap:8px}.btn{appearance:none;border:1px solid var(--stroke);background:#1b2436;color:#fff;border-radius:999px;padding:9px 14px;cursor:pointer;font-weight:700}
+.wrap{min-height:calc(100dvh - 60px);display:grid;place-items:center;padding:20px}
+.card{width:min(780px,96%);background:var(--panel);border:1px solid var(--stroke);border-radius:var(--radius);display:grid;grid-template-columns:1fr 1fr;overflow:hidden}
+.left,.right{padding:18px}.right{border-left:1px solid var(--stroke)}
+h1{margin:0 0 8px}.muted{color:var(--muted)}.small{font-size:.9rem}
+.tabs{display:flex;gap:8px;margin:8px 0 12px}
+.tab{flex:1;text-align:center;padding:10px;border-radius:12px;border:1px solid var(--stroke);cursor:pointer}
+.tab.active{border-color:var(--ring);box-shadow:0 0 0 2px color-mix(in oklab, var(--ring) 30%, transparent) inset}
+form{display:grid;gap:10px}
+label{font-size:.9rem;color:var(--muted)}
+input{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--stroke);background:#0f141f;color:#e7e9ee;outline:none}
+input:focus{border-color:var(--ring);box-shadow:0 0 0 3px color-mix(in oklab, var(--ring) 35%, transparent)}
+.err{color:#fda4af;min-height:1.2em}.ok{color:#9ae6b4;min-height:1.2em}
+@media (max-width:860px){.card{grid-template-columns:1fr}.right{border-left:0;border-top:1px solid var(--stroke)}}
+</style>
+<script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+</head>
+<body>
+<header>
+  <div class="brand">HexaShop</div>
+  <div class="actions"><a class="btn" href="index.html">На главную</a></div>
+</header>
+
+<div class="wrap">
+  <div class="card">
+    <section class="left">
+      <h1>Войти</h1>
+      <button id="googleIn" class="btn">Войти через Google</button>
+      <div class="tabs">
+        <button class="tab active" id="tabLogin">Вход</button>
+        <button class="tab" id="tabReg">Регистрация</button>
+      </div>
+
+      <form id="formLogin">
+        <div><label>Почта</label><input id="loginEmail" type="email" required /></div>
+        <div><label>Пароль</label><input id="loginPass" type="password" minlength="8" required /></div>
+        <button class="btn" type="submit">Войти</button>
+        <div class="err" id="loginErr"></div>
+      </form>
+
+      <form id="formReg" style="display:none">
+        <div><label>Почта</label><input id="regEmail" type="email" required /></div>
+        <div><label>Никнейм (a-z, 0-9, _; 3–20)</label><input id="regUser" type="text" pattern="^[a-z0-9_]{3,20}$" required /></div>
+        <div><label>Пароль</label><input id="regPass" type="password" minlength="8" required /></div>
+        <div><label>Повтор пароля</label><input id="regPass2" type="password" minlength="8" required /></div>
+        <button class="btn" type="submit">Создать аккаунт</button>
+        <div class="ok" id="regOk"></div><div class="err" id="regErr"></div>
+      </form>
+    </section>
+
+    <section class="right">
+      <h1>Памятка</h1>
+      <p class="small muted">Почта/пароль — через Supabase Auth. После входа страница вернётся туда, откуда пришёл.</p>
+      <button class="btn" id="goBack">← В каталог</button>
+    </section>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL="https://noxovxsvexezcomxqejk.supabase.co";
+const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5veG92eHN2ZXhlemNvbXhxZWprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEzNzQ5MzIsImV4cCI6MjA3Njk1MDkzMn0.r7OuZFhNuLYYVbLcorjIJ3UHPRPeqlOMH2H7nXdk69g";
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,detectSessionInUrl:true}});
+const backTo=localStorage.getItem('postLoginRedirect')||'index.html';
+const redirectTo=(location.origin.startsWith('http')?location.origin:'http://localhost:5500')+'/auth.html';
+
+document.getElementById('goBack').onclick=()=>location.href='index.html';
+const tabLogin=document.getElementById('tabLogin'), tabReg=document.getElementById('tabReg');
+const formLogin=document.getElementById('formLogin'), formReg=document.getElementById('formReg');
+const loginErr=document.getElementById('loginErr'), regErr=document.getElementById('regErr'), regOk=document.getElementById('regOk');
+
+tabLogin.onclick=()=>{tabLogin.classList.add('active');tabReg.classList.remove('active');formLogin.style.display='grid';formReg.style.display='none';};
+tabReg.onclick=()=>{tabReg.classList.add('active');tabLogin.classList.remove('active');formLogin.style.display='none';formReg.style.display='grid';};
+
+sb.auth.onAuthStateChange(async (event,session)=>{ if(event==='SIGNED_IN'||event==='USER_UPDATED'){ try{ if(session?.user) await ensureProfile(session.user);}catch(e){console.warn(e);} location.replace(backTo);} });
+(async()=>{const {data:{session}}=await sb.auth.getSession(); if(session?.user){ try{await ensureProfile(session.user);}catch(e){console.warn(e);} location.replace(backTo);} })();
+
+document.getElementById('googleIn').onclick=async()=>{loginErr.textContent=''; const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo}}); if(error) loginErr.textContent=error.message;};
+
+formLogin.addEventListener('submit',async e=>{e.preventDefault();loginErr.textContent=''; const {data,error}=await sb.auth.signInWithPassword({email:loginEmail.value.trim(),password:loginPass.value}); if(error){loginErr.textContent=error.message;return;} try{await ensureProfile(data.user);}catch(e){console.warn(e);} location.replace(backTo);});
+
+formReg.addEventListener('submit',async e=>{e.preventDefault();regErr.textContent='';regOk.textContent=''; if(regPass.value!==regPass2.value){regErr.textContent='Пароли не совпадают';return;} if(!/^[a-z0-9_]{3,20}$/.test(regUser.value.trim())){regErr.textContent='Ник: a-z, 0-9, _, 3–20';return;}
+  const {error}=await sb.auth.signUp({email:regEmail.value.trim(),password:regPass.value,options:{emailRedirectTo:redirectTo,data:{username:regUser.value.trim()}}}); if(error){regErr.textContent=error.message;return;}
+  const {data:{session}}=await sb.auth.getSession(); if(session?.user){ try{await ensureProfile(session.user);}catch(e){console.warn(e);} location.replace(backTo); return;}
+  regOk.textContent='Письмо отправлено. Подтверди e-mail и вернись.';
+});
+
+async function ensureProfile(user){
+  const {error}=await sb.rpc('upsert_my_profile',{p_username:user.user_metadata?.username||'',p_display_name:user.user_metadata?.full_name||user.email||''}); if(error) throw error;
+}
+</script>
+</body>
+</html>

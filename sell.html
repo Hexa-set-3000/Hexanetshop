@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>HexaShop — добавить товар</title>
+<style>
+:root{--bg:#0b0f14;--panel:#11161f;--text:#e7e9ee;--muted:#9aa3b2;--stroke:rgba(255,255,255,.12);--ring:#3b82f6;--radius:16px}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif}
+header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--stroke)}
+.brand{font-weight:900}.actions{display:flex;gap:8px}.btn{appearance:none;border:1px solid var(--stroke);background:#1b2436;color:#fff;border-radius:999px;padding:9px 14px;cursor:pointer;font-weight:700}
+main{max-width:900px;margin:0 auto;padding:14px 18px 40px}
+.card{background:var(--panel);border:1px solid var(--stroke);border-radius:var(--radius);padding:16px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label{font-size:.9rem;color:var(--muted)}
+input,select,textarea{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--stroke);background:#0f141f;color:#e7e9ee;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--ring);box-shadow:0 0 0 3px color-mix(in oklab, var(--ring) 35%, transparent)}
+textarea{min-height:100px}.muted{color:var(--muted)} .ok{color:#9ae6b4} .err{color:#fda4af}
+.prog{display:none;margin-top:8px}.barRow{display:grid;grid-template-columns:80px 1fr auto;gap:10px;align-items:center}progress{width:100%}.small{font-size:.9rem;color:var(--muted)}
+</style>
+<script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="accounts.js"></script>
+</head>
+<body>
+<header>
+  <div class="brand">HexaShop</div>
+  <div class="actions" id="hdrActions">
+    <a class="btn" href="index.html">Каталог</a>
+    <a class="btn" id="authLink" href="auth.html">Войти</a>
+  </div>
+</header>
+
+<main>
+  <a href="index.html" class="btn">← Назад</a>
+  <div class="card" style="margin-top:12px">
+    <h1 style="margin:0 0 10px">Добавить товар</h1>
+    <form id="form" style="display:grid;gap:12px">
+      <div class="row">
+        <div><label>Название</label><input id="title" required /></div>
+        <div><label>Валюта</label><select id="currency"><option value="RUB">RUB ₽</option><option value="USD">USD $</option></select></div>
+      </div>
+      <div><label>Описание</label><textarea id="desc" required></textarea></div>
+      <div class="row">
+        <div><label>Цена (целое число, напр. 199)</label><input id="price" type="number" min="0" step="1" required /></div>
+        <div><label>Тип товара</label><select id="ptype"><option value="DIRECT">DIRECT (ключ/инструкция)</option><option value="FILE">FILE (файл до 10МБ)</option></select></div>
+      </div>
+      <div class="row">
+        <div><label>Обложка</label><input id="cover" type="file" accept="image/*" required /></div>
+        <div id="fileSlot" style="display:none"><label>Файл товара</label><input id="pfile" type="file" /></div>
+      </div>
+
+      <div class="prog" id="progWrap">
+        <div class="barRow"><div class="small">Обложка</div><progress id="coverBar" value="0" max="100"></progress><div id="coverPct" class="small">0%</div></div>
+        <div class="barRow" id="fileBarRow" style="display:none"><div class="small">Файл</div><progress id="fileBar" value="0" max="100"></progress><div id="filePct" class="small">0%</div></div>
+      </div>
+
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn" type="submit">Опубликовать</button>
+        <span id="msg" class="muted"></span>
+      </div>
+    </form>
+  </div>
+</main>
+
+<script>
+const SUPABASE_URL="https://noxovxsvexezcomxqejk.supabase.co";
+const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5veG92eHN2ZXhlemNvbXhxZWprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEzNzQ5MzIsImV4cCI6MjA3Njk1MDkzMn0.r7OuZFhNuLYYVbLcorjIJ3UHPRPeqlOMH2H7nXdk69g";
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+Accounts.mountHeaderAuth(sb, 'sell.html');
+async function ensureProfileIfMissing(sb){const {data:{session}}=await sb.auth.getSession();const u=session?.user;if(!u)return;const {data:pr}=await sb.from('profiles').select('id').eq('id',u.id).maybeSingle();if(!pr){try{await sb.rpc('upsert_my_profile',{p_username:u.user_metadata?.username||'',p_display_name:u.user_metadata?.full_name||u.email||''});}catch(e){}}}
+async function mountHeaderAuth(sb){const btn=document.getElementById('authBtn'),actions=document.getElementById('hdrActions');if(!btn)return;await ensureProfileIfMissing(sb);const {data:{session}}=await sb.auth.getSession();const user=session?.user;const old=actions.querySelector('button[data-logout]');if(old)old.remove();if(user){btn.textContent='Профиль';btn.onclick=()=>location.href='profile.html';const o=document.createElement('button');o.className='btn';o.dataset.logout='1';o.textContent='Выйти';o.onclick=async()=>{await sb.auth.signOut();location.reload();};actions.appendChild(o);}else{btn.textContent='Войти';btn.onclick=()=>{localStorage.setItem('postLoginRedirect','sell.html');location.href='auth.html';};}}
+mountHeaderAuth(sb);
+
+const bucket='products'; const fileSlot=document.getElementById('fileSlot');
+ptype.onchange=()=>fileSlot.style.display=ptype.value==='FILE'?'':'none';
+(async()=>{const {data:{user}}=await sb.auth.getUser(); if(!user){localStorage.setItem('postLoginRedirect','sell.html'); location.href='auth.html';}})();
+function rnd(){return Date.now()+'_'+Math.random().toString(36).slice(2)}
+async function uploadWithProgress(path,file,onProgress){
+  const {data:{session}}=await sb.auth.getSession(); if(!session) throw new Error('Нет сессии');
+  const url=`${SUPABASE_URL}/storage/v1/object/${encodeURIComponent(bucket)}/${encodeURIComponent(path)}`;
+  const xhr=new XMLHttpRequest();
+  const promise=new Promise((res,rej)=>{xhr.open('POST',url,true);
+    xhr.setRequestHeader('Authorization',`Bearer ${session.access_token}`);
+    xhr.setRequestHeader('apikey',SUPABASE_KEY); xhr.setRequestHeader('x-upsert','false'); if(file.type) xhr.setRequestHeader('Content-Type',file.type);
+    xhr.upload.onprogress=(e)=>{if(e.lengthComputable&&onProgress){onProgress(Math.round(e.loaded/e.total*100));}};
+    xhr.onerror=()=>rej(new Error('Ошибка сети при загрузке'));
+    xhr.onload=()=>{if(xhr.status>=200&&xhr.status<300){try{res(JSON.parse(xhr.responseText));}catch{res({Key:path});}}else{rej(new Error(`Upload error: ${xhr.status} ${xhr.responseText}`));}};});
+  xhr.send(file); return promise;
+}
+form.addEventListener('submit',async e=>{
+  e.preventDefault(); msg.textContent=''; coverBar.value=0; fileBar.value=0; coverPct.textContent='0%'; filePct.textContent='0%'; progWrap.style.display='block'; fileBarRow.style.display=ptype.value==='FILE'?'grid':'none';
+  if(ptype.value==='FILE'&&pfile.files.length&&pfile.files[0].size>10*1024*1024){msg.className='err';msg.textContent='Файл больше 10МБ';return;}
+  if(ptype.value==='FILE'&&!pfile.files.length){msg.className='err';msg.textContent='Для типа FILE нужно выбрать файл';return;}
+  const priceCents=Math.round(Number(price.value||'0'))*100;
+  const {data:prod,error:perr}=await sb.from('products').insert({title:title.value.trim(),description:desc.value.trim(),price_cents:priceCents,currency:currency.value,type:ptype.value,status:'published'}).select('id').single();
+  if(perr){msg.className='err';msg.textContent='Ошибка создания товара: '+perr.message;return;}
+  try{
+    const coverPath=`covers/${prod.id}-${rnd()}.jpg`;
+    await uploadWithProgress(coverPath,cover.files[0],p=>{coverBar.value=p;coverPct.textContent=p+'%';});
+    const {data:cPub}=sb.storage.from(bucket).getPublicUrl(coverPath);
+    await sb.from('product_files').insert({product_id:prod.id,kind:'cover',url:cPub.publicUrl,storage_path:coverPath});
+    if(ptype.value==='FILE'&&pfile.files.length){
+      const filePath=`files/${prod.id}-${rnd()}-${encodeURIComponent(pfile.files[0].name)}`;
+      await uploadWithProgress(filePath,pfile.files[0],p=>{fileBar.value=p;filePct.textContent=p+'%';});
+      const {data:fPub}=sb.storage.from(bucket).getPublicUrl(filePath);
+      await sb.from('product_files').insert({product_id:prod.id,kind:'download',url:fPub.publicUrl,storage_path:filePath});
+    }
+    msg.className='ok'; msg.textContent='Готово! Переходим к товару…'; setTimeout(()=>location.href=`product.html?id=${prod.id}`,600);
+  }catch(err){console.error(err); msg.className='err'; msg.textContent='Ошибка загрузки: '+(err?.message||err);}
+});
+</script>
+</body>
+</html>
