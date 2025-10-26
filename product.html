@@ -15,15 +15,15 @@ main{max-width:1000px;margin:0 auto;padding:14px 18px 40px}
 h1{margin:0 0 6px}.muted{color:var(--muted)}
 </style>
 <script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="accounts.js"></script>
+<script src="/accounts.js"></script>
 </head>
 <body>
 <header>
   <div class="brand">HexaShop</div>
   <div class="actions" id="hdrActions">
-    <a class="btn" href="/index.html">Каталог</a>
-    <a class="btn" href="/sell.html">Sell</a>
-    <a class="btn" id="authLink" href="/auth.html">Войти</a>
+    <a class="btn" href="index.html">Каталог</a>
+    <a class="btn" href="sell.html">Sell</a>
+    <a class="btn" id="authLink" href="auth.html">Войти</a>
   </div>
 </header>
 
@@ -61,4 +61,5 @@ function price(c,cur='USD'){if(c==null)return'';const v=c/100;try{return new Int
 </script>
 </body>
 </html>
+
 
