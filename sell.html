@@ -18,14 +18,14 @@ textarea{min-height:100px}.muted{color:var(--muted)} .ok{color:#9ae6b4} .err{col
 .prog{display:none;margin-top:8px}.barRow{display:grid;grid-template-columns:80px 1fr auto;gap:10px;align-items:center}progress{width:100%}.small{font-size:.9rem;color:var(--muted)}
 </style>
 <script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="accounts.js"></script>
+<script src="/accounts.js"></script>
 </head>
 <body>
 <header>
   <div class="brand">HexaShop</div>
   <div class="actions" id="hdrActions">
-    <a class="btn" href="/index.html">Каталог</a>
-    <a class="btn" id="authLink" href="/auth.html">Войти</a>
+    <a class="btn" href="index.html">Каталог</a>
+    <a class="btn" id="authLink" href="auth.html">Войти</a>
   </div>
 </header>
 
@@ -110,4 +110,5 @@ form.addEventListener('submit',async e=>{
 </script>
 </body>
 </html>
+
 
