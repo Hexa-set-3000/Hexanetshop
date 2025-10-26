@@ -1,78 +1,285 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>HexaShop — профиль</title>
-<style>
-:root{--bg:#0b0f14;--panel:#11161f;--text:#e7e9ee;--muted:#9aa3b2;--stroke:rgba(255,255,255,.12);--ring:#3b82f6;--radius:16px}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif}
-header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--stroke)}
-.brand{font-weight:900}.actions{display:flex;gap:8px}.btn{appearance:none;border:1px solid var(--stroke);background:#1b2436;color:#fff;border-radius:999px;padding:9px 14px;cursor:pointer;font-weight:700}
-main{max-width:860px;margin:0 auto;padding:14px 18px 40px}
-.card{background:var(--panel);border:1px solid var(--stroke);border-radius:var(--radius);padding:16px}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-label{font-size:.9rem;color:var(--muted)}
-input{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--stroke);background:#0f141f;color:#e7e9ee;outline:none}
-input:focus{border-color:var(--ring);box-shadow:0 0 0 3px color-mix(in oklab, var(--ring) 35%, transparent)}
-.kv{display:grid;grid-template-columns:160px 1fr;gap:8px;color:var(--muted);margin-top:6px}.ok{color:#9ae6b4}.err{color:#fda4af}
-</style>
-<script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="/accounts.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HexaShop — удалить товар</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    // ВСТАВЬ СВОИ ДАННЫЕ SUPABASE
+    const SUPABASE_URL = "https://noxovxsvexezcomxqejk.supabase.co"; // твой проект
+    const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE";
+    // Названия таблиц/бакетов (если у тебя другие — исправь ниже):
+    const TABLE_PRODUCTS = "products";
+    const TABLE_PRODUCT_FILES = "product_files";
+    const TABLE_PROFILES = "profiles";
+    const BUCKET_COVERS = "products";       // бакет обложек
+    const BUCKET_FILES  = "product-files";  // бакет файлов товара
+    // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  </script>
+  <style>
+    :root{color-scheme:dark light}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial}
+    .container{max-width:980px;margin:32px auto;padding:0 16px}
+    .card{background:#0f131aCC;border:1px solid #222b3a;border-radius:16px;padding:20px;backdrop-filter:saturate(140%) blur(6px)}
+    .row{display:flex;gap:18px;flex-wrap:wrap}
+    .btn{appearance:none;border:1px solid #2b3447;background:#121826;padding:10px 16px;border-radius:12px;color:#e6edf3;cursor:pointer}
+    .btn:hover{background:#182031}
+    .btn-danger{border-color:#5b1d23;background:#2a0e11}
+    .btn-danger:hover{background:#3a1519}
+    .btn-ghost{border-color:#2b3447;background:transparent}
+    .muted{color:#9aa4b2}
+    input,select{background:#0f131a;border:1px solid #2b3447;border-radius:12px;color:#e6edf3;padding:10px 12px;width:100%}
+    img{max-width:100%;border-radius:12px;border:1px solid #222b3a}
+    .tag{font-size:12px;border:1px solid #2b3447;border-radius:999px;padding:2px 8px;display:inline-block;color:#9aa4b2}
+    .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+    .brand{font-weight:700}
+    .danger{color:#ffb4b4}
+    .ok{color:#88f0b0}
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;}
+    .hidden{display:none}
+  </style>
 </head>
 <body>
-<header>
-  <div class="brand">HexaShop</div>
-  <div class="actions" id="hdrActions">
-    <a class="btn" href="index.html">Каталог</a>
-    <a class="btn" id="authLink" href="auth.html">Войти</a>
-  </div>
-</header>
+  <div class="container">
+    <div class="header">
+      <div class="brand">HexaShop</div>
+      <div id="authArea">
+        <button class="btn" id="btnBack" onclick="history.back()">← Назад</button>
+      </div>
+    </div>
 
-<main>
-  <a href="index.html" class="btn">← Назад</a>
-  <div class="card" style="margin-top:12px">
-    <h1 style="margin:0 0 10px">Мой профиль</h1>
-    <div class="kv"><div>E-mail</div><div id="email">—</div></div>
-    <div class="kv"><div>User ID</div><div id="uid">—</div></div>
-    <form id="form" style="display:grid;gap:12px;margin-top:12px">
-      <div class="row">
-        <div><label>Никнейм (a-z, 0-9, _; 3–20)</label><input id="username" pattern="^[a-z0-9_]{3,20}$" /></div>
-        <div><label>Отображаемое имя</label><input id="display_name" /></div>
+    <div class="card">
+      <h2 style="margin:0 0 8px">Удаление товара</h2>
+      <p class="muted" id="subtitle">Загружаю данные…</p>
+
+      <div id="productArea" class="row hidden">
+        <div style="flex:1 1 280px;max-width:360px">
+          <img id="coverImg" alt="cover"/>
+        </div>
+        <div style="flex:2 1 360px;min-width:260px">
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+            <span class="tag" id="prodIdTag">#—</span>
+            <span class="tag" id="prodTypeTag">—</span>
+            <span class="tag" id="prodCurrencyTag">—</span>
+          </div>
+          <h3 id="prodTitle" style="margin:0 0 6px">—</h3>
+          <p id="prodDesc" class="muted" style="white-space:pre-wrap"></p>
+
+          <hr style="border:none;border-top:1px solid #222b3a;margin:16px 0">
+
+          <p class="danger">Это действие необратимо. Все файлы товара и обложка будут удалены.</p>
+          <label for="confirm">Введите <span class="mono">DELETE</span> для подтверждения:</label>
+          <input id="confirm" placeholder="DELETE">
+          <div style="display:flex;gap:12px;margin-top:12px">
+            <button class="btn btn-danger" id="btnDelete" disabled>Удалить навсегда</button>
+            <button class="btn btn-ghost" onclick="history.back()">Отмена</button>
+          </div>
+
+          <p id="status" class="muted" style="margin-top:12px"></p>
+        </div>
       </div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <button class="btn" type="submit">Сохранить</button>
-        <span id="msg" class="muted"></span>
-      </div>
-    </form>
+
+      <div id="blocked" class="danger hidden">У вас нет прав на удаление этого товара.</div>
+    </div>
   </div>
-</main>
 
 <script>
-const SUPABASE_URL="https://noxovxsvexezcomxqejk.supabase.co";
-const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5veG92eHN2ZXhlemNvbXhxZWprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEzNzQ5MzIsImV4cCI6MjA3Njk1MDkzMn0.r7OuZFhNuLYYVbLcorjIJ3UHPRPeqlOMH2H7nXdk69g";
-const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-Accounts.mountHeaderAuth(sb, 'delete.html');
-async function ensureProfileIfMissing(sb){const {data:{session}}=await sb.auth.getSession();const u=session?.user;if(!u)return;const {data:pr}=await sb.from('profiles').select('id').eq('id',u.id).maybeSingle();if(!pr){try{await sb.rpc('upsert_my_profile',{p_username:u.user_metadata?.username||'',p_display_name:u.user_metadata?.full_name||u.email||''});}catch(e){}}}
-async function mountHeaderAuth(sb){const btn=document.getElementById('authBtn'),actions=document.getElementById('hdrActions');if(!btn)return;await ensureProfileIfMissing(sb);const {data:{session}}=await sb.auth.getSession();const user=session?.user;const old=actions.querySelector('button[data-logout]');if(old)old.remove();if(user){btn.textContent='Профиль';btn.onclick=()=>location.href='profile.html';const o=document.createElement('button');o.className='btn';o.dataset.logout='1';o.textContent='Выйти';o.onclick=async()=>{await sb.auth.signOut();location.reload();};actions.appendChild(o);}else{btn.textContent='Войти';btn.onclick=()=>{localStorage.setItem('postLoginRedirect','profile.html');location.href='auth.html';};}}
-mountHeaderAuth(sb);
-
-const emailEl=document.getElementById('email'), uidEl=document.getElementById('uid'), fUser=document.getElementById('username'), fName=document.getElementById('display_name'), msg=document.getElementById('msg'), form=document.getElementById('form');
-
-(async function init(){
-  const {data:{user}}=await sb.auth.getUser();
-  if(!user){localStorage.setItem('postLoginRedirect','profile.html'); location.href='auth.html'; return;}
-  emailEl.textContent=user.email||'—'; uidEl.textContent=user.id;
-  const {data:p}=await sb.from('profiles').select('username,display_name').eq('id',user.id).maybeSingle();
-  fUser.value=p?.username||''; fName.value=p?.display_name||user.email||'';
-  form.addEventListener('submit',async e=>{e.preventDefault(); msg.textContent='';
-    const username=fUser.value.trim(), display=fName.value.trim();
-    if(username && !/^[a-z0-9_]{3,20}$/.test(username)){msg.className='err'; msg.textContent='Ник: a-z, 0-9, _, 3–20'; return;}
-    const {error}=await sb.rpc('upsert_my_profile',{p_username:username,p_display_name:display});
-    if(error){msg.className='err'; msg.textContent=error.message; return;} msg.className='ok'; msg.textContent='Сохранено';
+  const supabase = window.supabase.createClient(noxovxsvexezcomxqejk.supabase.co, eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5veG92eHN2ZXhlemNvbXhxZWprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEzNzQ5MzIsImV4cCI6MjA3Njk1MDkzMn0.r7OuZFhNuLYYVbLcorjIJ3UHPRPeqlOMH2H7nXdk69g, {
+    auth: { persistSession: true, detectSessionInUrl: true }
   });
-})();
+
+  const qs = new URLSearchParams(location.search);
+  const productId = Number(qs.get("id"));
+
+  const $ = (id) => document.getElementById(id);
+
+  const ui = {
+    subtitle: $("subtitle"),
+    productArea: $("productArea"),
+    coverImg: $("coverImg"),
+    prodIdTag: $("prodIdTag"),
+    prodTypeTag: $("prodTypeTag"),
+    prodCurrencyTag: $("prodCurrencyTag"),
+    prodTitle: $("prodTitle"),
+    prodDesc: $("prodDesc"),
+    confirm: $("confirm"),
+    btnDelete: $("btnDelete"),
+    status: $("status"),
+    blocked: $("blocked"),
+  };
+
+  let session = null;
+  let currentProfile = null;
+  let product = null;
+
+  function setStatus(msg, type="info"){
+    ui.status.textContent = msg || "";
+    ui.status.className = type==="error" ? "danger" : (type==="ok" ? "ok" : "muted");
+  }
+
+  function requireId(){
+    if(!productId || Number.isNaN(productId)){
+      ui.subtitle.textContent = "Не указан параметр id в адресе (?id=...)";
+      throw new Error("no id");
+    }
+  }
+
+  async function getSession(){
+    const { data } = await supabase.auth.getSession();
+    session = data.session;
+    if(!session){
+      ui.subtitle.innerHTML = "Нужно войти в аккаунт. <a href='./auth.html'>Открыть страницу входа</a>.";
+      throw new Error("no session");
+    }
+  }
+
+  async function loadProfile(){
+    const uid = session.user.id;
+    const { data, error } = await supabase
+      .from(TABLE_PROFILES)
+      .select("id, is_admin")
+      .eq("id", uid)
+      .maybeSingle();
+
+    if(error){ throw error; }
+    currentProfile = data || { id: uid, is_admin: false };
+  }
+
+  function coverPublicUrl(path){
+    if(!path) return "";
+    // Публичный URL обложки (если бакет публичный)
+    const { data } = supabase.storage.from(BUCKET_COVERS).getPublicUrl(path);
+    return data.publicUrl;
+  }
+
+  async function loadProduct(){
+    const { data, error } = await supabase
+      .from(TABLE_PRODUCTS)
+      .select("*")
+      .eq("id", productId)
+      .maybeSingle();
+
+    if(error) throw error;
+    if(!data){
+      ui.subtitle.textContent = "Товар не найден.";
+      throw new Error("not found");
+    }
+    product = data;
+
+    // Заполнить UI
+    ui.productArea.classList.remove("hidden");
+    ui.subtitle.textContent = "Проверьте данные и подтвердите удаление.";
+    ui.prodIdTag.textContent = `#${product.id}`;
+    ui.prodTypeTag.textContent = product.type || "—";
+    ui.prodCurrencyTag.textContent = product.currency || "—";
+    ui.prodTitle.textContent = product.title || "Без названия";
+    ui.prodDesc.textContent = (product.description || "").trim();
+    if(product.cover_path){
+      ui.coverImg.src = coverPublicUrl(product.cover_path);
+    } else {
+      ui.coverImg.alt = "Нет обложки";
+    }
+  }
+
+  function ensurePermissions(){
+    const isSeller = product.seller_id === currentProfile.id;
+    const isAdmin = !!currentProfile.is_admin;
+    if(!(isSeller || isAdmin)){
+      ui.productArea.classList.add("hidden");
+      ui.blocked.classList.remove("hidden");
+      throw new Error("forbidden");
+    }
+  }
+
+  async function listProductFiles(){
+    const { data, error } = await supabase
+      .from(TABLE_PRODUCT_FILES)
+      .select("id, storage_path")
+      .eq("product_id", productId);
+
+    if(error) throw error;
+    return data || [];
+  }
+
+  async function deleteStorageObject(bucket, path){
+    try{
+      if(!path) return;
+      const { error } = await supabase.storage.from(bucket).remove([path]);
+      if(error) console.warn("storage remove warn:", error);
+    }catch(e){ console.warn("storage remove err:", e); }
+  }
+
+  async function deleteProductFilesRows(){
+    const { error } = await supabase
+      .from(TABLE_PRODUCT_FILES)
+      .delete()
+      .eq("product_id", productId);
+    if(error) throw error;
+  }
+
+  async function deleteProductRow(){
+    const { error } = await supabase
+      .from(TABLE_PRODUCTS)
+      .delete()
+      .eq("id", productId);
+    if(error) throw error;
+  }
+
+  async function performDelete(){
+    try{
+      setStatus("Удаляю файлы…");
+      // Удалить прикреплённые файлы товара из бакета
+      const files = await listProductFiles();
+      for(const f of files){
+        await deleteStorageObject(BUCKET_FILES, f.storage_path);
+      }
+
+      // Удалить обложку
+      if(product.cover_path){
+        await deleteStorageObject(BUCKET_COVERS, product.cover_path);
+      }
+
+      setStatus("Чищу базу…");
+      // Удалить строки files
+      await deleteProductFilesRows();
+      // Удалить сам товар
+      await deleteProductRow();
+
+      setStatus("Товар удалён. Возврат в каталог…", "ok");
+      setTimeout(()=> location.href = "./index.html", 1000);
+    }catch(e){
+      console.error(e);
+      setStatus("Ошибка удаления: " + (e?.message || e), "error");
+    }
+  }
+
+  // Инициализация
+  (async () => {
+    try{
+      requireId();
+      await getSession();
+      await loadProfile();
+      await loadProduct();
+      ensurePermissions();
+
+      ui.confirm.addEventListener("input", () => {
+        ui.btnDelete.disabled = (ui.confirm.value.trim() !== "DELETE");
+      });
+
+      ui.btnDelete.addEventListener("click", async () => {
+        if(ui.confirm.value.trim() !== "DELETE") return;
+        ui.btnDelete.disabled = true;
+        setStatus("Старт удаления…");
+        await performDelete();
+      });
+
+    }catch(e){
+      console.warn(e);
+    }
+  })();
 </script>
 </body>
 </html>
-
-
