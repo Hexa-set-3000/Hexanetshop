@@ -71,7 +71,16 @@ const SUPABASE_URL="https://noxovxsvexezcomxqejk.supabase.co";
 const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5veG92eHN2ZXhlemNvbXhxZWprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEzNzQ5MzIsImV4cCI6MjA3Njk1MDkzMn0.r7OuZFhNuLYYVbLcorjIJ3UHPRPeqlOMH2H7nXdk69g";
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,detectSessionInUrl:true}});
 const backTo=localStorage.getItem('postLoginRedirect')||'index.html';
-const redirectTo=(location.origin.startsWith('http')?location.origin:'http://localhost:5500')+'/auth.html';
+const redirectTo = `${siteBase()}/auth.html`;
+
+function siteBase() {
+const { origin, pathname } = location;
+if (origin.includes('github.io')) {
+  const repo = pathname.split('/').filter(Boolean)[0] || '';
+  return repo ? `${origin}/${repo}` : origin; // https://user.github.io/hexashop
+}
+return origin; // localhost
+}
 
 document.getElementById('goBack').onclick=()=>location.href='index.html';
 const tabLogin=document.getElementById('tabLogin'), tabReg=document.getElementById('tabReg');
@@ -100,5 +109,6 @@ async function ensureProfile(user){
 </script>
 </body>
 </html>
+
 
 
